@@ -1,0 +1,16 @@
+# Java classes
+*.class
+
+# Generated files
+bin/
+
+# Eclipse project files
+.settings/
+.classpath
+.project
+
+# General files to ignore
+*.lock
+*.DS_Store
+*.swp
+*.out
