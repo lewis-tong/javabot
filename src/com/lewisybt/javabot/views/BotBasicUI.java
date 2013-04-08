@@ -20,7 +20,10 @@ public class BotBasicUI {
 		init();
 	}
 	
-	public void init() {	
+	/**
+	 * Initialize a basic UI with buttons to Start, Resume, Pause and Finish
+	 */
+	private void init() {	
 		window = new JFrame("Basic UI");
 		window.setResizable(false);
 		window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

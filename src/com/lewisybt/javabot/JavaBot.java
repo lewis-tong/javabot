@@ -13,6 +13,8 @@ import com.melloware.jintellitype.JIntellitype;
 
 public class JavaBot implements Runnable {
 
+	private static final String JINTELLITYPE32 = "JIntellitype32.dll";
+	private static final String JINTELLITYPE64 = "JIntellitype64.dll";
 	private static JavaBot instance; // singleton of JavaBot
 	private JIntellitype jInstance; // singleton of JIntellitype
 
@@ -23,24 +25,25 @@ public class JavaBot implements Runnable {
 	private Thread botThread; // thread running the bot
 	private volatile Queue<BotAction> actionQueue; // queue of actions to execute
 
+	public static final int FINISHED = 0; // status codes for running, paused, finished
+	public static final int RUNNING = 1;
+	public static final int PAUSED = 2;
 	private volatile int status = 0; // current status
-	public static int FINISHED = 0; // status codes for running, paused, finished
-	public static int RUNNING = 1;
-	public static int PAUSED = 2;
 	private Object lock; // lock for pausing/resuming
 
+	private static final int RUNNING_TIME = 6000000; // max running time of the bot
 	private long startTime; // the system time when bot thread began execution
-	private static int RUNNING_TIME = 6000000; // max running time of the bot
 
 	/**
 	 * Obtain singleton instance of JavaBot and starts the bot thread.
+	 * If the JIntellitype library is not found, will return null.
 	 * @return
 	 */
 	public static JavaBot getInstance() {
 		// check library support
-		JIntellitype.setLibraryLocation("JIntellitype32.dll"); // try 32-bit library
+		JIntellitype.setLibraryLocation(JINTELLITYPE32); // try 32-bit library
 		if (!JIntellitype.isJIntellitypeSupported()) {
-			JIntellitype.setLibraryLocation("JIntellitype64.dll"); // try 64-bit library
+			JIntellitype.setLibraryLocation(JINTELLITYPE64); // try 64-bit library
 			if (!JIntellitype.isJIntellitypeSupported()) {
 				System.out.println("JIntellitype not supported - missing DLL");
 				return null;
