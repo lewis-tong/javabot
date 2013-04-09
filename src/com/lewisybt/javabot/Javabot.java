@@ -8,14 +8,22 @@ import java.util.Queue;
 
 import com.lewisybt.javabot.objects.BotAction;
 import com.lewisybt.javabot.objects.BotHotkey;
+import com.lewisybt.javabot.objects.BotHotkeyListener;
 import com.melloware.jintellitype.HotkeyListener;
 import com.melloware.jintellitype.JIntellitype;
 
-public class JavaBot implements Runnable {
+/**
+ * The Javabot object. Also contains the thread that will execute the Java
+ * Robot actions.
+ * 
+ * @author Lewis
+ *
+ */
+public class Javabot implements Runnable {
 
 	private static final String JINTELLITYPE32 = "JIntellitype32.dll";
 	private static final String JINTELLITYPE64 = "JIntellitype64.dll";
-	private static JavaBot instance; // singleton of JavaBot
+	private static Javabot instance; // singleton of JavaBot
 	private JIntellitype jInstance; // singleton of JIntellitype
 
 	private int nextHotkeyID = 100; // incremental ID of hotkey mapping
@@ -39,7 +47,7 @@ public class JavaBot implements Runnable {
 	 * If the JIntellitype library is not found, will return null.
 	 * @return
 	 */
-	public static JavaBot getInstance() {
+	public static Javabot getInstance() {
 		// check library support
 		JIntellitype.setLibraryLocation(JINTELLITYPE32); // try 32-bit library
 		if (!JIntellitype.isJIntellitypeSupported()) {
@@ -51,7 +59,7 @@ public class JavaBot implements Runnable {
 		}
 
 		if (null == instance) {
-			instance = new JavaBot();
+			instance = new Javabot();
 		}
 		return instance;
 	}
@@ -59,7 +67,7 @@ public class JavaBot implements Runnable {
 	/**
 	 * Private constructor for singleton instance
 	 */
-	private JavaBot() {
+	private Javabot() {
 		// initializations
 		this.jInstance = JIntellitype.getInstance();
 		this.hotkeyIDMap = new HashMap<>();
@@ -75,7 +83,7 @@ public class JavaBot implements Runnable {
 		HotkeyListener hkl = new HotkeyListener() {
 			public void onHotKey(int keyID) {
 				if (hotkeyIDMap.containsKey(keyID)) {
-					sendAction(hotkeyIDMap.get(keyID).action);
+					hotkeyIDMap.get(keyID).listener.onHotkey(hotkeyIDMap.get(keyID).key);
 				}
 			}
 		};
@@ -86,6 +94,7 @@ public class JavaBot implements Runnable {
 			@Override
 			public void run() {
 				finish();
+				cleanUp();
 			}
 		});
 	}
@@ -99,8 +108,8 @@ public class JavaBot implements Runnable {
 	}
 
 	/**
-	 * Returns the ID associated with a given hotkey
-	 * @param hotkey
+	 * Returns the ID associated with a given hotkey, or -1 if no ID exists.
+	 * @param hotkey hotkey value in ASCII
 	 * @return
 	 */
 	private int getHotkeyID(int hotkey) {
@@ -112,26 +121,26 @@ public class JavaBot implements Runnable {
 	}
 
 	/**
-	 * Sets a hotkey to perform the given action
-	 * @param hotkey hotkey id in ASCII
-	 * @param action
+	 * Binds a hotkey to a listener
+	 * @param hotkey hotkey value in ASCII
+	 * @param listener the object handling the hotkey action
 	 */
-	public void setHotkey(int hotkey, BotAction action) {
+	public void bindHotkey(int hotkey, BotHotkeyListener listener) {
 		int hotkeyID = getHotkeyID(hotkey);
 		if (hotkeyID != -1) {
-			hotkeyIDMap.get(hotkeyID).action = action;
+			hotkeyIDMap.get(hotkeyID).listener = listener;
 		} else {
 			hotkeyID = nextHotkeyID++;
 			jInstance.registerHotKey(hotkeyID, 0, hotkey);
-			hotkeyIDMap.put(hotkeyID, new BotHotkey(hotkeyID, hotkey, action));
+			hotkeyIDMap.put(hotkeyID, new BotHotkey(hotkeyID, hotkey, listener));
 		}
 	}
 
 	/**
-	 * Unbinds a hotkey
-	 * @param hotkey hotkey id in ASCII
+	 * Unbinds a hotkey from its listener
+	 * @param hotkey hotkey value in ASCII
 	 */
-	public void removeHotkey(int hotkey) {
+	public void unbindHotkey(int hotkey) {
 		int hotkeyID = getHotkeyID(hotkey);
 		if (hotkeyID != -1) {
 			jInstance.unregisterHotKey(hotkeyID);
@@ -179,13 +188,37 @@ public class JavaBot implements Runnable {
 			lock.notify();
 		}
 	}
+	
+	/**
+	 * Returns whether the bot's status is Running
+	 * @return
+	 */
+	public boolean isRunning() {
+		return status == RUNNING;
+	}
+	
+	/**
+	 * Returns whether the bot's status is Paused
+	 * @return
+	 */
+	public boolean isPaused() {
+		return status == PAUSED;
+	}
+	
+	/**
+	 * Returns whether the bot's status is Stopped/Finished
+	 * @return
+	 */
+	public boolean isStopped() {
+		return status == FINISHED;
+	}
 
 	/**
 	 * Sends an action command to the bot, and returns whether it was successful
-	 * @param action
+	 * @param action the action to be queued up
 	 * @return true if action successfully added to action queue; false otherwise.
 	 */
-	public boolean sendAction(BotAction action) {
+	public boolean queueAction(BotAction action) {
 		if (status == RUNNING) {
 			actionQueue.add(action);
 			return true;
@@ -194,7 +227,7 @@ public class JavaBot implements Runnable {
 	}
 
 	/**
-	 * Called at the end of program to cleanup instances
+	 * Called at the end of program to cleanup library instances
 	 */
 	public void cleanUp() {
 		JIntellitype.getInstance().cleanUp();

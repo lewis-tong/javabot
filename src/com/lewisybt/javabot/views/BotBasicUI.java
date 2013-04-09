@@ -8,20 +8,25 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
-import com.lewisybt.javabot.JavaBot;
+import com.lewisybt.javabot.Javabot;
 
+/**
+ * A Basic UI for the given Javabot, that contains buttons to operate the bot.
+ * @author Lewis
+ *
+ */
 public class BotBasicUI {
 
-	private JavaBot bot;
+	private Javabot bot;
 	private JFrame window;
 	
-	public BotBasicUI(JavaBot bot) {
+	public BotBasicUI(Javabot bot) {
 		this.bot = bot;
 		init();
 	}
 	
 	/**
-	 * Initialize a basic UI with buttons to Start, Resume, Pause and Finish
+	 * Initialize the window and buttons
 	 */
 	private void init() {	
 		window = new JFrame("Basic UI");

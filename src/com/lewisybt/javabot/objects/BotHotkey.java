@@ -1,15 +1,20 @@
 package com.lewisybt.javabot.objects;
 
+/**
+ * Class representing a Javabot Hotkey
+ * @author Lewis
+ *
+ */
 public class BotHotkey {
 
 	public int id;
 	public int key;
-	public BotAction action;
+	public BotHotkeyListener listener;
 	
-	public BotHotkey(int id, int key, BotAction action) {
+	public BotHotkey(int id, int key, BotHotkeyListener listener) {
 		this.id = id;
 		this.key = key;
-		this.action = action;
+		this.listener = listener;
 	}
 
 }
